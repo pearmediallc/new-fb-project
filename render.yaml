@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: fb-page-create
+    name: new-fb-project
     env: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
