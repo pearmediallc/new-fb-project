@@ -151,41 +151,20 @@ PAGES_PER_PROFILE = int(os.getenv('PAGES_PER_PROFILE', '3'))
 # Profile rotation: After PAGES_PER_PROFILE pages, rotate to next profile
 CREATOR_PROFILES = [
     {
-        'email': 'itsuportsriaas@gmail.com',
-        'password': 'Hii@2000',
-        'name': 'Profile 1 (IT Support)',
-        'pages_per_session': PAGES_PER_PROFILE,
-    },
-    {
         'email': 'shreya0193@outlook.com',
         'password': 'shreya@0193',
-        'name': 'Profile 2 (Shreya)',
-        'pages_per_session': PAGES_PER_PROFILE,
-    },
-    {
-        'email': 'shashankrohilla123@outlook.com',
-        'password': 'shashank@123',
-        'name': 'Profile 3 (Shashank)',
-        'pages_per_session': PAGES_PER_PROFILE,
-    },
-    {
-        'email': 'sumit00776@outlook.com',
-        'password': 'Hii@2000',
-        'name': 'Profile 4 (Sumit)',
+        'name': 'Profile 1 (Shreya)',
         'pages_per_session': PAGES_PER_PROFILE,
     },
 ]
 
 FACEBOOK_ACCOUNTS = [
-    {'email': 'itsuportsriaas@gmail.com', 'password': 'Hii@2000', 'active': True},
     {'email': 'shreya0193@outlook.com', 'password': 'shreya@0193', 'active': True},
-    {'email': 'shashankrohilla123@outlook.com', 'password': 'shashank@123', 'active': True},
-    {'email': 'sumit00776@outlook.com', 'password': 'Hii@2000', 'active': True},
 ]
 
 # Set default creator profile (first profile)
-CREATOR_PROFILE_EMAIL = 'itsuportsriaas@gmail.com'
-CREATOR_PROFILE_PASSWORD = 'Hii@2000'
+CREATOR_PROFILE_EMAIL = 'shreya0193@outlook.com'
+CREATOR_PROFILE_PASSWORD = 'shreya@0193'
 
 # ===========================================
 # Page Creation Settings (No Rate Limits)
