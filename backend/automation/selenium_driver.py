@@ -2029,10 +2029,10 @@ class FacebookPageGenerator:
                 screenshot_path = f"/tmp/fb_after_page_name_{int(time.time())}.png"
                 self.driver.save_screenshot(screenshot_path)
                 print(f">>> 📸 Screenshot saved: {screenshot_path}")
-                # Also save base64 for viewing in logs
+                # Print FULL base64 for viewing in logs - copy entire line to browser
                 screenshot_b64 = self.driver.get_screenshot_as_base64()
-                print(f">>> 📸 Screenshot base64 (after page name):")
-                print(f"data:image/png;base64,{screenshot_b64[:100]}...")  # Print first 100 chars
+                print(f">>> 📸 FULL SCREENSHOT BASE64 (copy this entire line to browser):")
+                print(f"data:image/png;base64,{screenshot_b64}")
                 logger.info(f"Screenshot after page name entry saved to: {screenshot_path}")
             except Exception as ss_err:
                 print(f">>> Screenshot error: {ss_err}")
@@ -2217,10 +2217,10 @@ class FacebookPageGenerator:
                 screenshot_path = f"/tmp/fb_after_create_page_click_{int(time.time())}.png"
                 self.driver.save_screenshot(screenshot_path)
                 print(f">>> 📸 Screenshot saved: {screenshot_path}")
-                # Also save base64 for viewing in logs
+                # Print FULL base64 for viewing in logs - copy entire line to browser
                 screenshot_b64 = self.driver.get_screenshot_as_base64()
-                print(f">>> 📸 Screenshot base64 (for debugging):")
-                print(f"data:image/png;base64,{screenshot_b64[:100]}...")  # Print first 100 chars
+                print(f">>> 📸 FULL SCREENSHOT BASE64 (copy this entire line to browser):")
+                print(f"data:image/png;base64,{screenshot_b64}")
                 logger.info(f"Screenshot after Create Page click saved to: {screenshot_path}")
             except Exception as ss_err:
                 print(f">>> Screenshot error: {ss_err}")
@@ -2235,6 +2235,19 @@ class FacebookPageGenerator:
 
             # Wait for page to fully load after Create Page click
             time.sleep(8)
+
+            # ========================================
+            # SCREENSHOT: Before looking for Next/Skip/Done buttons
+            # ========================================
+            print(">>> 📸 Taking screenshot BEFORE looking for buttons (STEP 9)...")
+            try:
+                screenshot_b64 = self.driver.get_screenshot_as_base64()
+                print(f">>> 📸 STEP 9 SCREENSHOT - Current page state:")
+                print(f">>> Current URL: {self.driver.current_url}")
+                print(f">>> 📸 FULL SCREENSHOT BASE64 (copy this entire line to browser):")
+                print(f"data:image/png;base64,{screenshot_b64}")
+            except Exception as ss_err:
+                print(f">>> Screenshot error: {ss_err}")
 
             # CORRECT button order based on screenshots:
             # Step 1: Next, Step 2: Next, Step 3: Skip, Step 4: Next, Step 5: Done
