@@ -189,8 +189,10 @@ class FacebookPageGenerator:
         """
         Check for and dismiss common Facebook popups like "Save login info?" or "Not now".
 
-        Facebook HTML structure for "Not now" button:
-        <span class="x1lliihq x6ikm8r x10wlt62 x1n2onr6 xlyipyv xuxw1ft">Not now</span>
+        Facebook HTML structure for "Not now" button (from actual Facebook):
+        <div role="none" class="x1ja2u2z x78zum5...">
+          <span class="x1lliihq x193iq5w x6ikm8r x10wlt62 xlyipyv xuxw1ft">Not now</span>
+        </div>
 
         Returns:
             True if a popup was dismissed, False otherwise
@@ -199,24 +201,29 @@ class FacebookPageGenerator:
             return False
 
         try:
-            # Selectors matching Facebook's actual HTML structure (lowercase "Not now")
+            print(">>> Checking for 'Not now' popup...")
+
+            # Selectors matching Facebook's actual HTML structure
             not_now_selectors = [
-                # Primary: Match exact span with Facebook's CSS classes
+                # PRIORITY 1: Exact match from actual Facebook HTML
+                "//span[contains(@class, 'x1lliihq') and contains(@class, 'x193iq5w') and contains(@class, 'xuxw1ft') and text()='Not now']",
+                "//span[contains(@class, 'x1lliihq') and contains(@class, 'xuxw1ft') and text()='Not now']",
+                # PRIORITY 2: Match span with key classes
                 "//span[contains(@class, 'x1lliihq') and text()='Not now']",
                 "//span[contains(@class, 'xuxw1ft') and text()='Not now']",
-                "//span[contains(@class, 'x1lliihq') and contains(text(), 'Not now')]",
-                # Nested span structure: div[@role='none'] > span > span
+                "//span[contains(@class, 'x6ikm8r') and text()='Not now']",
+                # PRIORITY 3: Nested inside div[@role='none']
                 "//div[@role='none']//span[text()='Not now']",
                 "//div[@role='none']//span[contains(text(), 'Not now')]",
-                # Direct text match (case variations)
+                # PRIORITY 4: Direct text match (case variations)
                 "//span[text()='Not now']",
                 "//span[text()='Not Now']",
-                # Button/link fallbacks
+                # PRIORITY 5: Button/link fallbacks
                 "//button[contains(text(), 'Not now')]",
                 "//button[contains(text(), 'Not Now')]",
                 "//a[contains(text(), 'Not now')]",
                 "//a[contains(text(), 'Not Now')]",
-                # Aria-label fallback
+                # PRIORITY 6: Aria-label fallback
                 "//div[@aria-label='Not now']",
                 "//*[@aria-label='Not now']",
             ]
@@ -1695,6 +1702,9 @@ class FacebookPageGenerator:
             print(f">>> Current URL: {self.driver.current_url}")
             screenshot("home_page")
 
+            # Check for "Not now" popup before proceeding
+            self._dismiss_popup_if_present()
+
             # ========================================
             # STEP 2: Click "See more" to expand left sidebar menu
             # ========================================
@@ -1714,8 +1724,7 @@ class FacebookPageGenerator:
                     elements = self.driver.find_elements(By.XPATH, selector)
                     for elem in elements:
                         if elem.is_displayed():
-                            self.driver.execute_script("arguments[0].click();", elem)
-                            print(f">>> ✓ Clicked 'See more' button")
+                            self._click_element(elem, "See more button")
                             see_more_clicked = True
                             time.sleep(1)
                             break
@@ -1725,6 +1734,9 @@ class FacebookPageGenerator:
             if not see_more_clicked:
                 print(">>> WARNING: 'See more' not found, trying direct navigation to Pages...")
             screenshot("after_see_more")
+
+            # Check for "Not now" popup after "See more" click
+            self._dismiss_popup_if_present()
 
             # ========================================
             # STEP 3: Click "Pages" in expanded menu
@@ -1807,15 +1819,8 @@ class FacebookPageGenerator:
                     sys.stdout.flush()
                     for elem in elements:
                         if elem.is_displayed():
-                            # Try regular Selenium click first (works better for links/navigation)
-                            try:
-                                elem.click()
-                                print(f">>> ✓ Clicked 'Create Page' (regular click)")
-                            except Exception as click_err:
-                                # Fallback to JavaScript click if regular click fails
-                                print(f">>> Regular click failed: {click_err}, trying JS click...")
-                                self.driver.execute_script("arguments[0].click();", elem)
-                                print(f">>> ✓ Clicked 'Create Page' (JS click)")
+                            # Use click helper for logging
+                            self._click_element(elem, "Create Page button")
                             create_clicked = True
                             time.sleep(2)
                             break
@@ -1832,6 +1837,9 @@ class FacebookPageGenerator:
             print(f">>> After STEP 4 - Current URL: {self.driver.current_url}")
             print(f">>> After STEP 4 - Page title: {self.driver.title}")
             screenshot("after_create_page_click")
+
+            # Check for "Not now" popup after Create Page click
+            self._dismiss_popup_if_present()
 
             # ========================================
             # MODAL DETECTION: After "+ Create Page", Facebook opens a MODAL
@@ -2061,6 +2069,9 @@ class FacebookPageGenerator:
             # ========================================
             # STEP 4: Find and fill PAGE NAME field
             # ========================================
+            # Check for "Not now" popup before filling form
+            self._dismiss_popup_if_present()
+
             print(">>> PAGE CREATION STEP 4: Looking for Page Name input field...")
             screenshot("before_page_name_search")
             page_name_input = None
