@@ -9,3 +9,7 @@ services:
         value: "True"
       - key: DEBUG
         value: "False"
+      - key: MONGO_URI
+        sync: false  # Set this in Render dashboard (secret)
+      - key: MONGO_DB_NAME
+        value: "facebook_pages"
