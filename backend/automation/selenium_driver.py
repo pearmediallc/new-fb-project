@@ -116,6 +116,68 @@ class FacebookPageGenerator:
             print(f">>> Screenshot failed: {e}")
         return ""
 
+    def _dismiss_popup_if_present(self) -> bool:
+        """
+        Check for and dismiss common Facebook popups like "Save login info?" or "Not now".
+
+        Facebook HTML structure for "Not now" button:
+        <span class="x1lliihq x6ikm8r x10wlt62 x1n2onr6 xlyipyv xuxw1ft">Not now</span>
+
+        Returns:
+            True if a popup was dismissed, False otherwise
+        """
+        if not self.driver:
+            return False
+
+        try:
+            # Selectors matching Facebook's actual HTML structure (lowercase "Not now")
+            not_now_selectors = [
+                # Primary: Match exact span with Facebook's CSS classes
+                "//span[contains(@class, 'x1lliihq') and text()='Not now']",
+                "//span[contains(@class, 'xuxw1ft') and text()='Not now']",
+                "//span[contains(@class, 'x1lliihq') and contains(text(), 'Not now')]",
+                # Nested span structure: div[@role='none'] > span > span
+                "//div[@role='none']//span[text()='Not now']",
+                "//div[@role='none']//span[contains(text(), 'Not now')]",
+                # Direct text match (case variations)
+                "//span[text()='Not now']",
+                "//span[text()='Not Now']",
+                # Button/link fallbacks
+                "//button[contains(text(), 'Not now')]",
+                "//button[contains(text(), 'Not Now')]",
+                "//a[contains(text(), 'Not now')]",
+                "//a[contains(text(), 'Not Now')]",
+                # Aria-label fallback
+                "//div[@aria-label='Not now']",
+                "//*[@aria-label='Not now']",
+            ]
+
+            for selector in not_now_selectors:
+                try:
+                    elements = self.driver.find_elements(By.XPATH, selector)
+                    for elem in elements:
+                        if elem.is_displayed():
+                            # Try multiple click methods
+                            try:
+                                elem.click()
+                            except Exception:
+                                self.driver.execute_script("arguments[0].click();", elem)
+                            print(f">>> ✓ Dismissed popup: clicked 'Not now' button")
+                            logger.info("Dismissed 'Not now' popup")
+                            time.sleep(2)
+                            return True
+                except NoSuchElementException:
+                    continue
+                except Exception:
+                    continue
+
+            # No popup found - this is normal
+            return False
+
+        except Exception as popup_err:
+            print(f">>> Popup check error (non-fatal): {popup_err}")
+            return False
+
     def _is_on_login_page(self) -> bool:
         """
         Check if browser is currently on Facebook login page.
@@ -898,26 +960,7 @@ class FacebookPageGenerator:
 
             # Handle any post-login popups (e.g., "Save login info?")
             print(">>> STEP 9: Checking for post-login popups...")
-            try:
-                not_now_selectors = [
-                    "//button[contains(text(), 'Not Now')]",
-                    "//a[contains(text(), 'Not Now')]",
-                    "//span[text()='Not Now']",
-                    "//div[@aria-label='Not now']",
-                ]
-                for selector in not_now_selectors:
-                    try:
-                        not_now_btn = self.driver.find_element(By.XPATH, selector)
-                        if not_now_btn.is_displayed():
-                            not_now_btn.click()
-                            print(">>> Clicked 'Not Now' on post-login popup")
-                            logger.info("Clicked 'Not Now' on post-login popup")
-                            time.sleep(2)
-                            break
-                    except NoSuchElementException:
-                        continue
-            except Exception as popup_err:
-                print(f">>> Popup check error (non-fatal): {popup_err}")
+            self._dismiss_popup_if_present()  # Use helper method
 
             # Take screenshot after popup check (no base64 to save memory)
             try:
@@ -1749,6 +1792,10 @@ class FacebookPageGenerator:
             else:
                 print(">>> URL unchanged - modal should have opened, proceeding with modal flow...")
 
+            # Check for any "Save login info?" or "Not now" popups before proceeding
+            print(">>> Checking for popups before page creation flow...")
+            self._dismiss_popup_if_present()
+
             # ========================================
             # STEP 3.55: Check for "Get started" button (SKIP if already on creation form)
             # ========================================
@@ -1796,19 +1843,27 @@ class FacebookPageGenerator:
             if "pages/creation" in self.driver.current_url:
                 print(">>> STEP 3.6: SKIPPING radio button - already on creation form URL")
             else:
+                # Check for popups before radio button step
+                self._dismiss_popup_if_present()
+
                 print(">>> STEP 3.6: Looking for radio button (Public Page) in modal...")
                 screenshot("before_radio_button")
 
                 # Quick check - only 3 attempts, 1 second each
-                # Facebook HTML: <input type="radio" aria-checked="true" class="x1i10hfl...">
+                # Facebook HTML: <input type="radio" aria-checked="true" class="x1i10hfl xjbqb8w xjqpnuy xa49m3k...">
                 for wait_radio in range(3):
                     radio_selectors = [
-                        (By.CSS_SELECTOR, "input[type='radio']"),
+                        # Primary: Match exact radio input with Facebook's CSS class
+                        (By.CSS_SELECTOR, "input.x1i10hfl[type='radio']"),
                         (By.CSS_SELECTOR, "input[type='radio'][aria-checked]"),
+                        (By.CSS_SELECTOR, "input[type='radio']"),
+                        (By.XPATH, "//input[contains(@class, 'x1i10hfl') and @type='radio']"),
                         (By.XPATH, "//input[@type='radio']"),
                         # Click parent div containing "Public Page" text
                         (By.XPATH, "//div[contains(.//span, 'Public Page')]//input[@type='radio']"),
                         (By.XPATH, "//span[contains(text(), 'Public Page')]/ancestor::div[.//input[@type='radio']]//input"),
+                        # Label-based fallback
+                        (By.XPATH, "//label[contains(., 'Public')]//input[@type='radio']"),
                     ]
 
                     for selector_type, selector_value in radio_selectors:
@@ -1843,12 +1898,18 @@ class FacebookPageGenerator:
                 from selenium.webdriver.common.action_chains import ActionChains
 
                 # User provided HTML: <div class="html-div xdj266r... x1c1uobl..."><div role="none"><span><span>Next</span></span></div></div>
+                # Also: <span class="x1lliihq x6ikm8r x10wlt62 x1n2onr6 xlyipyv xuxw1ft">Next</span>
                 next_button_selectors = [
-                    # PRIORITY 1: Find the innermost span with "Next" text (click will bubble up)
+                    # PRIORITY 1: Match span with Facebook's CSS classes
+                    (By.XPATH, "//span[contains(@class, 'x1lliihq') and text()='Next']"),
+                    (By.XPATH, "//span[contains(@class, 'xuxw1ft') and text()='Next']"),
+                    # PRIORITY 2: Find the innermost span with "Next" text (click will bubble up)
                     (By.XPATH, "//span[text()='Next']"),
-                    # PRIORITY 2: Find parent div with x1c1uobl class containing Next
+                    # PRIORITY 3: Nested span structure (div[@role='none'] > span > span)
+                    (By.XPATH, "//div[@role='none']//span[text()='Next']"),
+                    # PRIORITY 4: Find parent div with x1c1uobl class containing Next
                     (By.XPATH, "//div[contains(@class, 'x1c1uobl') and .//span[text()='Next']]"),
-                    # PRIORITY 3: Any div/button with role='button' containing Next
+                    # PRIORITY 5: Any div/button with role='button' containing Next
                     (By.XPATH, "//div[@role='button' and .//span[text()='Next']]"),
                     (By.XPATH, "//*[@role='button' and contains(., 'Next')]"),
                 ]
@@ -1892,6 +1953,9 @@ class FacebookPageGenerator:
                     print(">>> WARNING: 'Next' button not found after radio!")
             else:
                 print(">>> No radio button screen detected, proceeding to page form...")
+
+            # Check for popups after Next button click
+            self._dismiss_popup_if_present()
 
             # ========================================
             # STEP 3.7: Click "Get started" button (SKIP if already on creation form)
