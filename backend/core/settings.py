@@ -151,20 +151,20 @@ PAGES_PER_PROFILE = int(os.getenv('PAGES_PER_PROFILE', '3'))
 # Profile rotation: After PAGES_PER_PROFILE pages, rotate to next profile
 CREATOR_PROFILES = [
     {
-        'email': 'priyasharma246@outlook.com',
-        'password': 'priya@246',
-        'name': 'Profile 1 (Priya)',
+        'email': 'anumangal222@outlook.com',
+        'password': 'anu$2222',
+        'name': 'Profile 1 (Anu)',
         'pages_per_session': PAGES_PER_PROFILE,
     },
 ]
 
 FACEBOOK_ACCOUNTS = [
-    {'email': 'priyasharma246@outlook.com', 'password': 'priya@246', 'active': True},
+    {'email': 'anumangal222@outlook.com', 'password': 'anu$2222', 'active': True},
 ]
 
 # Set default creator profile (first profile)
-CREATOR_PROFILE_EMAIL = 'priyasharma246@outlook.com'
-CREATOR_PROFILE_PASSWORD = 'priya@246'
+CREATOR_PROFILE_EMAIL = 'anumangal222@outlook.com'
+CREATOR_PROFILE_PASSWORD = 'anu$2222'
 
 # ===========================================
 # Page Creation Settings (No Rate Limits)
