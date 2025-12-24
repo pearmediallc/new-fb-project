@@ -2021,6 +2021,22 @@ class FacebookPageGenerator:
             print(f">>> PAGE CREATION STEP 5: Entered page name: {page_name}")
             logger.info(f"Entered page name: {page_name}")
 
+            # ========================================
+            # SCREENSHOT: After entering page name
+            # ========================================
+            print(">>> 📸 Taking screenshot after entering page name...")
+            try:
+                screenshot_path = f"/tmp/fb_after_page_name_{int(time.time())}.png"
+                self.driver.save_screenshot(screenshot_path)
+                print(f">>> 📸 Screenshot saved: {screenshot_path}")
+                # Also save base64 for viewing in logs
+                screenshot_b64 = self.driver.get_screenshot_as_base64()
+                print(f">>> 📸 Screenshot base64 (after page name):")
+                print(f"data:image/png;base64,{screenshot_b64[:100]}...")  # Print first 100 chars
+                logger.info(f"Screenshot after page name entry saved to: {screenshot_path}")
+            except Exception as ss_err:
+                print(f">>> Screenshot error: {ss_err}")
+
             # Brief wait before category (max 1 sec)
             time.sleep(1)
 
@@ -2191,6 +2207,23 @@ class FacebookPageGenerator:
                 print(f">>> DEBUG: Found {len(buttons)} button elements")
                 divs_with_role = self.driver.find_elements(By.CSS_SELECTOR, "div[role='button']")
                 print(f">>> DEBUG: Found {len(divs_with_role)} div[role='button'] elements")
+
+            # ========================================
+            # SCREENSHOT: After clicking Create Page button
+            # ========================================
+            print(">>> 📸 Taking screenshot after Create Page button click...")
+            time.sleep(2)  # Wait for any UI changes
+            try:
+                screenshot_path = f"/tmp/fb_after_create_page_click_{int(time.time())}.png"
+                self.driver.save_screenshot(screenshot_path)
+                print(f">>> 📸 Screenshot saved: {screenshot_path}")
+                # Also save base64 for viewing in logs
+                screenshot_b64 = self.driver.get_screenshot_as_base64()
+                print(f">>> 📸 Screenshot base64 (for debugging):")
+                print(f"data:image/png;base64,{screenshot_b64[:100]}...")  # Print first 100 chars
+                logger.info(f"Screenshot after Create Page click saved to: {screenshot_path}")
+            except Exception as ss_err:
+                print(f">>> Screenshot error: {ss_err}")
 
             # ========================================
             # STEP 9: Click buttons with proper timing
