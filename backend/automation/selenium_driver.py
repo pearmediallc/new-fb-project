@@ -1759,8 +1759,14 @@ class FacebookPageGenerator:
                 print(">>> STEP 3.55: SKIPPING 'Get started' - already on creation form URL")
             else:
                 print(">>> STEP 3.55: Checking for 'Get started' button...")
+                # Facebook HTML: <div role="none"><span><span class="x1lliihq...">Get started</span></span></div>
                 get_started_selectors = [
+                    (By.XPATH, "//span[contains(@class, 'x1lliihq') and text()='Get started']"),
+                    (By.XPATH, "//span[contains(@class, 'xuxw1ft') and text()='Get started']"),
+                    (By.XPATH, "//span[contains(text(), 'Get started')]"),
                     (By.XPATH, "//span[text()='Get started']"),
+                    (By.XPATH, "//div[@role='none']//span[text()='Get started']"),
+                    (By.XPATH, "//div[@role='none']//span[contains(text(), 'Get started')]"),
                 ]
                 for selector_type, selector_value in get_started_selectors:
                     if get_started_clicked:
@@ -1794,9 +1800,15 @@ class FacebookPageGenerator:
                 screenshot("before_radio_button")
 
                 # Quick check - only 3 attempts, 1 second each
+                # Facebook HTML: <input type="radio" aria-checked="true" class="x1i10hfl...">
                 for wait_radio in range(3):
                     radio_selectors = [
                         (By.CSS_SELECTOR, "input[type='radio']"),
+                        (By.CSS_SELECTOR, "input[type='radio'][aria-checked]"),
+                        (By.XPATH, "//input[@type='radio']"),
+                        # Click parent div containing "Public Page" text
+                        (By.XPATH, "//div[contains(.//span, 'Public Page')]//input[@type='radio']"),
+                        (By.XPATH, "//span[contains(text(), 'Public Page')]/ancestor::div[.//input[@type='radio']]//input"),
                     ]
 
                     for selector_type, selector_value in radio_selectors:
@@ -2286,9 +2298,22 @@ class FacebookPageGenerator:
                 # Switch to default content
                 self.driver.switch_to.default_content()
 
-                # XPath selectors for the button (blue buttons at bottom of form)
+                # XPath selectors for the button (Facebook uses nested spans with role="none")
+                # Based on actual Facebook HTML structure:
+                # <div role="none"><span><span>Next</span></span></div>
                 xpaths = [
+                    # PRIORITY 1: Nested span structure (Facebook's actual HTML)
+                    f"//span[contains(@class, 'x1lliihq') and text()='{button_text}']",
+                    f"//span[contains(@class, 'xuxw1ft') and text()='{button_text}']",
+                    # PRIORITY 2: Any span containing the text (handles nested spans)
+                    f"//span[contains(text(), '{button_text}')]",
                     f"//span[text()='{button_text}']",
+                    # PRIORITY 3: Parent div with role="none" containing the text
+                    f"//div[@role='none']//span[text()='{button_text}']",
+                    f"//div[@role='none']//span[contains(text(), '{button_text}')]",
+                    # PRIORITY 4: Clickable ancestor of the text
+                    f"//span[text()='{button_text}']/ancestor::div[@role='none'][1]",
+                    # PRIORITY 5: Old selectors as fallback
                     f"//div[@role='button']//span[text()='{button_text}']",
                 ]
 
