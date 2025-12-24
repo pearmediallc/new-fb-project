@@ -156,10 +156,17 @@ CREATOR_PROFILES = [
         'name': 'Profile 1 (Anu)',
         'pages_per_session': PAGES_PER_PROFILE,
     },
+    {
+        'email': 'khushijangir455@outlook.com',
+        'password': 'khushi@455',
+        'name': 'Profile 2 (Khushi)',
+        'pages_per_session': PAGES_PER_PROFILE,
+    },
 ]
 
 FACEBOOK_ACCOUNTS = [
     {'email': 'anumangal222@outlook.com', 'password': 'anu$2222', 'active': True},
+    {'email': 'khushijangir455@outlook.com', 'password': 'khushi@455', 'active': True},
 ]
 
 # Set default creator profile (first profile)
