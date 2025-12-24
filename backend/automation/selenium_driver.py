@@ -116,6 +116,75 @@ class FacebookPageGenerator:
             print(f">>> Screenshot failed: {e}")
         return ""
 
+    def _click_element(self, elem, context: str = "") -> bool:
+        """
+        Click an element and log details about what was clicked.
+
+        Args:
+            elem: The WebElement to click
+            context: Optional context string describing what we're clicking (e.g., "Next button")
+
+        Returns:
+            True if click succeeded, False otherwise
+        """
+        try:
+            # Get element details for logging
+            tag_name = elem.tag_name.upper() if elem.tag_name else "UNKNOWN"
+
+            # Get text content (truncated if too long)
+            text = ""
+            try:
+                text = elem.text.strip()[:50] if elem.text else ""
+            except:
+                pass
+
+            # Get key attributes
+            elem_id = ""
+            elem_class = ""
+            elem_role = ""
+            aria_label = ""
+            try:
+                elem_id = elem.get_attribute("id") or ""
+                elem_class = elem.get_attribute("class") or ""
+                elem_role = elem.get_attribute("role") or ""
+                aria_label = elem.get_attribute("aria-label") or ""
+            except:
+                pass
+
+            # Build log message
+            details = []
+            if text:
+                details.append(f"text='{text}'")
+            if elem_id:
+                details.append(f"id='{elem_id}'")
+            if elem_role:
+                details.append(f"role='{elem_role}'")
+            if aria_label:
+                details.append(f"aria-label='{aria_label}'")
+            if elem_class:
+                # Truncate long class names
+                short_class = elem_class[:60] + "..." if len(elem_class) > 60 else elem_class
+                details.append(f"class='{short_class}'")
+
+            details_str = ", ".join(details) if details else "no details"
+            context_str = f" [{context}]" if context else ""
+
+            print(f">>> CLICK{context_str}: <{tag_name}> {details_str}")
+            logger.info(f"Clicking{context_str}: <{tag_name}> {details_str}")
+
+            # Try regular click first, then JS click
+            try:
+                elem.click()
+            except Exception:
+                self.driver.execute_script("arguments[0].click();", elem)
+
+            return True
+
+        except Exception as e:
+            print(f">>> CLICK FAILED: {e}")
+            logger.error(f"Click failed: {e}")
+            return False
+
     def _dismiss_popup_if_present(self) -> bool:
         """
         Check for and dismiss common Facebook popups like "Save login info?" or "Not now".
@@ -157,13 +226,7 @@ class FacebookPageGenerator:
                     elements = self.driver.find_elements(By.XPATH, selector)
                     for elem in elements:
                         if elem.is_displayed():
-                            # Try multiple click methods
-                            try:
-                                elem.click()
-                            except Exception:
-                                self.driver.execute_script("arguments[0].click();", elem)
-                            print(f">>> ✓ Dismissed popup: clicked 'Not now' button")
-                            logger.info("Dismissed 'Not now' popup")
+                            self._click_element(elem, "Dismiss popup - Not now")
                             time.sleep(2)
                             return True
                 except NoSuchElementException:
@@ -268,8 +331,7 @@ class FacebookPageGenerator:
                     elements = self.driver.find_elements(sel_type, sel_val)
                     for elem in elements:
                         if elem.is_displayed():
-                            self.driver.execute_script("arguments[0].click();", elem)
-                            print(">>> ✓ Clicked 'Your profile' button")
+                            self._click_element(elem, "Your profile button")
                             profile_button_clicked = True
                             time.sleep(2)
                             break
@@ -313,15 +375,13 @@ class FacebookPageGenerator:
                                 # Try to find the circular arrows icon within this element
                                 parent_html = elem.get_attribute('outerHTML')
                                 if 'viewBox="0 0 20 20"' in parent_html or 'fill-rule' in parent_html:
-                                    self.driver.execute_script("arguments[0].click();", elem)
-                                    print(">>> ✓ Clicked profile switch option")
+                                    self._click_element(elem, "Profile switch option")
                                     switch_clicked = True
                                     time.sleep(3)
                                     break
                             except:
                                 # Just click it anyway
-                                self.driver.execute_script("arguments[0].click();", elem)
-                                print(">>> ✓ Clicked profile switch option (fallback)")
+                                self._click_element(elem, "Profile switch option (fallback)")
                                 switch_clicked = True
                                 time.sleep(3)
                                 break
@@ -707,9 +767,7 @@ class FacebookPageGenerator:
                 try:
                     cookie_btn = self.driver.find_element(By.XPATH, selector)
                     if cookie_btn.is_displayed():
-                        cookie_btn.click()
-                        print(f">>> Clicked cookie consent button: {selector}")
-                        logger.info(f"Clicked cookie consent button: {selector}")
+                        self._click_element(cookie_btn, "Cookie consent button")
                         time.sleep(2)
                         return True
                 except NoSuchElementException:
@@ -930,9 +988,7 @@ class FacebookPageGenerator:
                 try:
                     login_button = self.driver.find_element(selector_type, selector_value)
                     if login_button.is_displayed() and login_button.is_enabled():
-                        login_button.click()
-                        print(f">>> Clicked login button: {selector_value}")
-                        logger.info(f"Clicked login button: {selector_value}")
+                        self._click_element(login_button, "Login button")
                         login_clicked = True
                         break
                 except NoSuchElementException:
@@ -2145,7 +2201,7 @@ class FacebookPageGenerator:
 
             if category_input:
                 # Click and type category (use simple keyword for better matching)
-                category_input.click()
+                self._click_element(category_input, "Category input field")
                 time.sleep(0.5)
 
                 # Use first word of category for better Facebook matching
@@ -2170,9 +2226,8 @@ class FacebookPageGenerator:
                             options = self.driver.find_elements(By.XPATH, selector)
                             for opt in options:
                                 if opt.is_displayed():
-                                    opt.click()
+                                    self._click_element(opt, "Category dropdown option")
                                     dropdown_clicked = True
-                                    print(f">>> Clicked first dropdown option")
                                     break
                             if dropdown_clicked:
                                 break
@@ -2395,9 +2450,8 @@ class FacebookPageGenerator:
                                     )
                                     time.sleep(0.5)  # Human pause before clicking
 
-                                    # Click using JavaScript (more reliable)
-                                    self.driver.execute_script("arguments[0].click();", elem)
-                                    print(f">>>   ✓ Clicked '{button_text}' button")
+                                    # Click using helper (logs element details)
+                                    self._click_element(elem, f"Button: {button_text}")
                                     return True
                         except Exception as e:
                             pass

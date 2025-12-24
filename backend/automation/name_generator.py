@@ -4,7 +4,30 @@ Generates generic, professional-sounding page names across various niches.
 """
 
 import random
+import re
 from typing import List, Tuple
+
+
+def simplify_page_name(name: str) -> str:
+    """
+    Convert CamelCase names to Facebook-friendly format.
+    Facebook rejects CamelCase and prefers simple names with spaces.
+
+    Examples:
+        "HealthVibeNow" -> "Health Vibe Now"
+        "WellnessBloom" -> "Wellness Bloom"
+        "FitFusionWorld" -> "Fit Fusion World"
+
+    Args:
+        name: CamelCase page name
+
+    Returns:
+        Space-separated title case name
+    """
+    # Insert space before each capital letter (except the first)
+    spaced = re.sub(r'(?<!^)(?=[A-Z])', ' ', name)
+    # Title case to ensure proper capitalization
+    return spaced.title()
 
 # Health & Wellness Page Names
 HEALTH_WELLNESS_NAMES = [
@@ -137,8 +160,8 @@ def generate_page_names(base_name: str, count: int) -> List[Tuple[str, str]]:
                 name = f"{name}{i+1}"
             selected_names.append(name)
 
-    # Return as list of tuples (name, category)
-    return [(name, category) for name in selected_names]
+    # Return as list of tuples (name, category) with simplified names
+    return [(simplify_page_name(name), category) for name in selected_names]
 
 
 def get_page_name_for_sequence(base_name: str, sequence_num: int, total_count: int) -> Tuple[str, str]:
@@ -185,7 +208,8 @@ def get_page_name_for_sequence(base_name: str, sequence_num: int, total_count: i
     # Reset random seed
     random.seed()
 
-    return (name, category)
+    # Return simplified name
+    return (simplify_page_name(name), category)
 
 
 def get_random_page_name(category: str = None) -> str:
@@ -201,14 +225,14 @@ def get_random_page_name(category: str = None) -> str:
     if category:
         category_lower = category.lower()
         if 'health' in category_lower:
-            return random.choice(HEALTH_WELLNESS_NAMES)
+            return simplify_page_name(random.choice(HEALTH_WELLNESS_NAMES))
         elif 'home' in category_lower or 'decor' in category_lower:
-            return random.choice(HOME_DECOR_NAMES)
+            return simplify_page_name(random.choice(HOME_DECOR_NAMES))
         elif 'beauty' in category_lower or 'model' in category_lower:
-            return random.choice(BEAUTY_MODELING_NAMES)
+            return simplify_page_name(random.choice(BEAUTY_MODELING_NAMES))
         elif 'insurance' in category_lower or 'finance' in category_lower:
-            return random.choice(INSURANCE_FINANCE_NAMES)
+            return simplify_page_name(random.choice(INSURANCE_FINANCE_NAMES))
         elif 'real' in category_lower or 'property' in category_lower:
-            return random.choice(REAL_ESTATE_NAMES)
+            return simplify_page_name(random.choice(REAL_ESTATE_NAMES))
 
-    return random.choice(ALL_PAGE_NAMES)
+    return simplify_page_name(random.choice(ALL_PAGE_NAMES))
